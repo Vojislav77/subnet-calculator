@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Network Admin Toolkit – Subnet Calculator</title>
+    <!-- Font Awesome Icons (free) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- Favicon: fa-network-wired (teal) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'%3E%3Cpath fill='%230077b6' d='M256 64h128v64H256V64zM384 256H256c-17.7 0-32 14.3-32 32v128c0 17.7 14.3 32 32 32h128c17.7 0 32-14.3 32-32V288c0-17.7-14.3-32-32-32zm0 160H256V288h128v128zm-192-80v16c0 8.8-7.2 16-16 16H56c-8.8 0-16-7.2-16-16v-16c0-8.8 7.2-16 16-16h120c8.8 0 16 7.2 16 16zm192-80v16c0 8.8-7.2 16-16 16H248c-8.8 0-16-7.2-16-16v-16c0-8.8 7.2-16 16-16h120c8.8 0 16 7.2 16 16zm-336 0v16c0 8.8-7.2 16-16 16H56c-8.8 0-16-7.2-16-16v-16c0-8.8 7.2-16 16-16h120c8.8 0 16 7.2 16 16zM512 176v-16c0-8.8-7.2-16-16-16H344v-40h72c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32H224c-17.7 0-32 14.3-32 32v128c0 17.7 14.3 32 32 32h72v40H16c-8.8 0-16 7.2-16 16v16c0 8.8 7.2 16 16 16h104v40H64c-17.7 0-32 14.3-32 32v128c0 17.7 14.3 32 32 32h160c17.7 0 32-14.3 32-32V352c0-17.7-14.3-32-32-32h-56v-40h304v40h-56c-17.7 0-32 14.3-32 32v128c0 17.7 14.3 32 32 32h160c17.7 0 32-14.3 32-32V352c0-17.7-14.3-32-32-32h-56v-40h104c8.8 0 16-7.2 16-16zM256 128V64h128v64H256zM192 448H96v-64h96v64zm352 0H448v-64h96v64z'/%3E%3C/svg%3E" />
+    <style>
+        /* ----- RESET & BASE (LIGHT THEME) ----- */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-primary: #f5f7fb;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f0f2f6;
+            --bg-input: #f0f2f6;
+            --border-color: #d0d7de;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-muted: #6b7280;
+            --teal: #0077b6;
+            --teal-dark: #005a8c;
+            --teal-light: #00a6d9;
+            --teal-glow: rgba(0, 119, 182, 0.12);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+            --radius: 14px;
+            --radius-sm: 8px;
+            --transition: 0.25s ease;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1.25rem 4rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--teal-dark);
+            border-radius: 12px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--teal);
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* ----- HEADER ----- */
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding: 0.5rem 0;
+        }
+
+        .header h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #1f2937 30%, var(--teal) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .header h1 .accent {
+            -webkit-text-fill-color: var(--teal);
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            margin-top: 0.4rem;
+            max-width: 500px;
+        }
+
+        /* ----- CARDS ----- */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.75rem 2rem;
+            box-shadow: var(--shadow);
+            transition: border-color var(--transition), box-shadow var(--transition);
+            margin-bottom: 1.75rem;
+        }
+
+        .card:hover {
+            border-color: var(--teal);
+            box-shadow: 0 8px 32px rgba(0, 119, 182, 0.08);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.02em;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-title i {
+            color: var(--teal);
+            font-size: 1.1rem;
+            width: 1.4rem;
+            text-align: center;
+        }
+
+        .card-title .right-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.7rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        .card-title .right-actions .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: var(--font);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .card-title .right-actions .action-btn:hover {
+            color: var(--teal);
+            background: var(--teal-glow);
+        }
+
+        .card-title .right-actions .action-btn i {
+            font-size: 0.7rem;
+            color: inherit;
+            width: auto;
+        }
+
+        /* ----- INPUT SECTION ----- */
+        .input-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 0.9rem;
+            align-items: end;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .input-group label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .input-group label i {
+            color: var(--teal);
+            font-size: 0.7rem;
+        }
+
+        .input-group input {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 0.7rem 1rem;
+            font-size: 1rem;
+            font-family: var(--font);
+            color: var(--text-primary);
+            transition: border-color var(--transition), box-shadow var(--transition);
+            width: 100%;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px var(--teal-glow);
+        }
+
+        .input-group input::placeholder {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .input-group input.error {
+            border-color: #f87171;
+            box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
+        }
+
+        .input-group .hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+        }
+
+        /* CIDR slider */
+        .cidr-slider-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .cidr-slider-wrap input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            flex: 1;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 4px;
+            outline: none;
+            transition: background 0.2s;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .cidr-slider-wrap input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--teal);
+            border: 2px solid var(--bg-card);
+            box-shadow: 0 0 0 3px var(--teal-glow);
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .cidr-slider-wrap input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .cidr-slider-wrap input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--teal);
+            border: 2px solid var(--bg-card);
+            box-shadow: 0 0 0 3px var(--teal-glow);
+            cursor: pointer;
+        }
+
+        .cidr-slider-wrap .cidr-value {
+            min-width: 2.6rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: var(--teal);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 0.7rem 1.8rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            white-space: nowrap;
+            height: 48px;
+            align-self: end;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(0, 119, 182, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary i {
+            font-size: 0.9rem;
+        }
+
+        /* ----- PRESETS ----- */
+        .presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.9rem;
+            padding-top: 0.9rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .presets-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            margin-right: 0.3rem;
+        }
+
+        .preset-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            padding: 0.25rem 0.9rem;
+            font-size: 0.75rem;
+            font-family: var(--font);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            background: var(--teal-glow);
+            border-color: var(--teal);
+            color: var(--teal);
+        }
+
+        /* ----- RESULTS ----- */
+        #results {
+            display: none;
+            animation: fadeUp 0.45s ease;
+        }
+
+        #results.visible {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Summary grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-item {
+            background: var(--bg-input);
+            border-radius: var(--radius-sm);
+            padding: 1rem 1.2rem;
+            border: 1px solid var(--border-color);
+            transition: border-color var(--transition);
+        }
+
+        .summary-item:hover {
+            border-color: var(--teal);
+        }
+
+        .summary-item .label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .summary-item .value {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-top: 0.2rem;
+            font-variant-numeric: tabular-nums;
+            word-break: break-all;
+            color: var(--text-primary);
+        }
+
+        .summary-item .value .highlight {
+            color: var(--teal);
+        }
+
+        .summary-item .value .mono {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-weight: 500;
+        }
+
+        /* Detail table */
+        .detail-table-wrap {
+            overflow-x: auto;
+            margin-top: 0.5rem;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .detail-table th {
+            text-align: left;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.6rem 0.8rem 0.4rem 0.8rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .detail-table td {
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .detail-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .detail-table .label-cell {
+            color: var(--text-secondary);
+            font-weight: 400;
+            white-space: nowrap;
+        }
+
+        .detail-table .value-cell {
+            font-weight: 500;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+
+        .detail-table .value-cell .ip-val {
+            color: var(--text-primary);
+        }
+        .detail-table .value-cell .mask-val {
+            color: var(--teal);
+        }
+
+        .detail-table .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .detail-table .copy-btn:hover {
+            color: var(--teal);
+            background: var(--teal-glow);
+        }
+
+        /* ----- BINARY ROWS (text + bit breakdown) ----- */
+        .binary-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+        .binary-row:last-child {
+            border-bottom: none;
+        }
+
+        .binary-row .label {
+            min-width: 80px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            font-family: var(--font);
+            font-weight: 600;
+        }
+
+        .binary-row .bits-text {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            letter-spacing: 0.02em;
+            background: var(--bg-input);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            word-break: break-all;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .binary-row .bits-text .octet-group {
+            display: inline-block;
+            padding: 0 0.1rem;
+        }
+        .binary-row .bits-text .octet-group+.octet-group::before {
+            content: '.';
+            color: var(--text-muted);
+            margin: 0 0.1rem;
+        }
+
+        .binary-row .bits-text .bit-network {
+            color: var(--teal);
+            font-weight: 600;
+        }
+        .binary-row .bits-text .bit-host {
+            color: #d97706;
+            font-weight: 600;
+        }
+
+        /* Bit breakdown info on the right */
+        .bit-breakdown {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            background: var(--bg-input);
+            padding: 0.2rem 0.7rem;
+            border-radius: 100px;
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .bit-breakdown .net-bits {
+            color: var(--teal);
+            font-weight: 600;
+        }
+        .bit-breakdown .host-bits {
+            color: #d97706;
+            font-weight: 600;
+        }
+        .bit-breakdown .total-bits {
+            color: var(--text-muted);
+        }
+        .bit-breakdown .sep {
+            color: var(--text-muted);
+            opacity: 0.4;
+            margin: 0 0.1rem;
+        }
+
+        /* ----- RESPONSIVE ----- */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem 0.8rem 3rem;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .card {
+                padding: 1.2rem 1rem;
+            }
+
+            .input-grid {
+                grid-template-columns: 1fr;
+                gap: 0.7rem;
+            }
+
+            .btn-primary {
+                width: 100%;
+                justify-content: center;
+                height: 44px;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.6rem;
+            }
+
+            .summary-item .value {
+                font-size: 1rem;
+            }
+
+            .detail-table {
+                font-size: 0.8rem;
+            }
+
+            .detail-table td,
+            .detail-table th {
+                padding: 0.4rem 0.5rem;
+            }
+
+            .binary-row {
+                gap: 0.6rem;
+            }
+            .binary-row .label {
+                min-width: 60px;
+                font-size: 0.6rem;
+            }
+            .binary-row .bits-text {
+                font-size: 0.7rem;
+                min-width: 120px;
+            }
+            .bit-breakdown {
+                font-size: 0.6rem;
+                padding: 0.15rem 0.5rem;
+            }
+            .presets {
+                gap: 0.35rem;
+            }
+            .preset-btn {
+                font-size: 0.65rem;
+                padding: 0.2rem 0.7rem;
+            }
+            .cidr-slider-wrap .cidr-value {
+                min-width: 2rem;
+                font-size: 0.95rem;
+            }
+            .card-title .right-actions {
+                gap: 0.5rem;
+                font-size: 0.6rem;
+            }
+            .card-title .right-actions .action-btn {
+                font-size: 0.6rem;
+                padding: 0.05rem 0.3rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .card {
+                padding: 1rem 0.8rem;
+            }
+            .binary-row .bits-text {
+                font-size: 0.6rem;
+                min-width: 80px;
+            }
+            .bit-breakdown {
+                font-size: 0.55rem;
+                padding: 0.1rem 0.4rem;
+            }
+            .binary-row .label {
+                min-width: 50px;
+                font-size: 0.55rem;
+            }
+        }
+
+        /* ----- UTILITY ----- */
+        .text-muted {
+            color: var(--text-muted);
+        }
+        .text-teal {
+            color: var(--teal);
+        }
+        .mt-1 {
+            margin-top: 0.5rem;
+        }
+        .mt-2 {
+            margin-top: 1rem;
+        }
+        .flex {
+            display: flex;
+        }
+        .flex-center {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .gap-1 {
+            gap: 0.5rem;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--bg-card);
+            border: 1px solid var(--teal);
+            color: var(--text-primary);
+            padding: 0.6rem 1.4rem;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast i {
+            color: var(--teal);
+        }
+
+        .error-msg {
+            color: #f87171;
+            font-size: 0.8rem;
+            margin-top: 0.4rem;
+            display: none;
+        }
+        .error-msg.visible {
+            display: block;
+        }
+        .no-results {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem 0;
+        }
+        .no-results i {
+            font-size: 2.5rem;
+            margin-bottom: 0.6rem;
+            opacity: 0.3;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ===== HEADER ===== -->
+        <header class="header">
+            <h1>Network Admin <span class="accent">Toolkit</span></h1>
+            <p>Subnet Calculator — CIDR, bitwise operations &amp; binary visualization</p>
+        </header>
+
+        <!-- ===== INPUT CARD ===== -->
+        <section class="card" id="inputCard">
+            <div class="card-title">
+                <i class="fas fa-sliders-h"></i> Subnet Parameters
+            </div>
+
+            <div class="input-grid">
+                <!-- IP Address -->
+                <div class="input-group">
+                    <label for="ipInput"><i class="fas fa-ip"></i> IP Address</label>
+                    <input
+                    type="text"
+                    id="ipInput"
+                    placeholder="e.g. 192.168.1.0"
+                    value="192.168.1.100"
+                    autocomplete="off"
+                    spellcheck="false"
+                    />
+                    <div class="hint">Format: 0.0.0.0 – 255.255.255.255</div>
+                    <div class="error-msg" id="ipError"><i class="fas fa-exclamation-circle"></i> Invalid IP address</div>
+                </div>
+
+                <!-- CIDR Prefix -->
+                <div class="input-group">
+                    <label for="cidrInput"><i class="fas fa-route"></i> CIDR Prefix</label>
+                    <div class="cidr-slider-wrap">
+                        <input
+                        type="range"
+                        id="cidrSlider"
+                        min="0"
+                        max="32"
+                        value="24"
+                        step="1"
+                        />
+                        <input
+                        type="number"
+                        id="cidrInput"
+                        min="0"
+                        max="32"
+                        value="24"
+                        step="1"
+                        class="cidr-value-input"
+                        style="width:52px; background:var(--bg-input); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.4rem 0.2rem; text-align:center; font-size:1rem; font-weight:600; color:var(--teal); outline:none; font-family:var(--font);"
+                        />
+                        <span class="cidr-value" id="cidrDisplay">/24</span>
+                    </div>
+                    <div class="hint">/0 – /32</div>
+                    <div class="error-msg" id="cidrError"><i class="fas fa-exclamation-circle"></i> Prefix must be 0–32</div>
+                </div>
+
+                <!-- Calculate Button -->
+                <button class="btn-primary" id="calcBtn">
+                    <i class="fas fa-calculator"></i> Calculate
+                </button>
+            </div>
+
+            <!-- Presets -->
+            <div class="presets">
+                <span class="presets-label"><i class="fas fa-bolt"></i> Quick:</span>
+                <button class="preset-btn" data-ip="192.168.1.0" data-prefix="24">/24</button>
+                <button class="preset-btn" data-ip="10.0.0.0" data-prefix="16">/16</button>
+                <button class="preset-btn" data-ip="172.16.0.0" data-prefix="20">/20</button>
+                <button class="preset-btn" data-ip="192.168.1.100" data-prefix="30">/30</button>
+                <button class="preset-btn" data-ip="203.0.113.5" data-prefix="27">/27</button>
+                <button class="preset-btn" data-ip="10.10.10.10" data-prefix="32">/32</button>
+                <button class="preset-btn" data-ip="192.168.0.1" data-prefix="31">/31</button>
+            </div>
+        </section>
+
+        <!-- ===== RESULTS ===== -->
+        <section id="results">
+
+            <!-- Summary Cards -->
+            <div class="card" id="summaryCard">
+                <div class="card-title">
+                    <i class="fas fa-chart-pie"></i> Summary
+                </div>
+                <div class="summary-grid" id="summaryGrid">
+                    <!-- populated by JS -->
+                </div>
+            </div>
+
+            <!-- Detail Table -->
+            <div class="card" id="detailCard">
+                <div class="card-title">
+                    <i class="fas fa-table"></i> Detailed Values
+                    <span class="right-actions">
+                        <button class="action-btn" id="exportCsvBtn" title="Export as CSV">
+                            <i class="fas fa-file-csv"></i> Export CSV
+                        </button>
+                        <span style="opacity:0.3;">|</span>
+                        <span>
+                            <i class="fas fa-copy"></i> Click <span style="color:var(--teal);">⎘</span> to copy
+                        </span>
+                    </span>
+                </div>
+                <div class="detail-table-wrap">
+                    <table class="detail-table" id="detailTable">
+                        <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>Dotted Decimal</th>
+                                <th>Binary</th>
+                                <th style="width:40px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailBody">
+                            <!-- populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Binary Visualization (text + bit breakdown) -->
+            <div class="card" id="binaryCard">
+                <div class="card-title">
+                    <i class="fas fa-binary"></i> Binary Breakdown
+                    <span style="margin-left:auto;font-size:0.7rem;font-weight:400;color:var(--text-muted);">
+                        <span class="dot net" style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--teal);vertical-align:middle;margin-right:0.2rem;"></span> Network
+                        <span class="dot host" style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#d97706;vertical-align:middle;margin:0 0.2rem 0 0.8rem;"></span> Host
+                    </span>
+                </div>
+                <div class="binary-section" id="binarySection">
+                    <!-- populated by JS -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ===== FOOTER ===== -->
+        <div style="margin-top:2rem; text-align:center; font-size:0.75rem; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:1.5rem; width:100%;">
+            <i class="fas fa-network-wired" style="margin-right:0.4rem;color:var(--teal-dark);"></i>
+            Network Admin Toolkit · Built with JavaScript
+        </div>
+
+    </div>
+
+    <!-- ===== TOAST ===== -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Copied!</span>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ===== JAVASCRIPT ===== -->
+    <script>
+        (function() {
+            'use strict';
+
+            // ----- DOM refs -----
+            const ipInput = document.getElementById('ipInput');
+            const cidrInput = document.getElementById('cidrInput');
+            const cidrSlider = document.getElementById('cidrSlider');
+            const cidrDisplay = document.getElementById('cidrDisplay');
+            const calcBtn = document.getElementById('calcBtn');
+            const resultsEl = document.getElementById('results');
+            const summaryGrid = document.getElementById('summaryGrid');
+            const detailBody = document.getElementById('detailBody');
+            const binarySection = document.getElementById('binarySection');
+            const ipError = document.getElementById('ipError');
+            const cidrError = document.getElementById('cidrError');
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+
+            let toastTimeout = null;
+            let lastResult = null; // store latest result for CSV export
+
+            // ----- Helpers -----
+
+            function ipToInt(ip) {
+                const parts = ip.split('.').map(Number);
+                if (parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 255)) {
+                    return null;
+                }
+                return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+            }
+
+            function intToIp(int) {
+                return [
+                    (int >>> 24) & 255,
+                    (int >>> 16) & 255,
+                    (int >>> 8) & 255,
+                    int & 255
+                ].join('.');
+            }
+
+            function formatBinary(ipInt, maskInt) {
+                const octets = [];
+                for (let i = 0; i < 4; i++) {
+                    const shift = 24 - i * 8;
+                    const val = (ipInt >>> shift) & 255;
+                    octets.push(val.toString(2).padStart(8, '0'));
+                }
+                return octets.join('.');
+            }
+
+            function buildBinaryWithHighlight(ipInt, prefix) {
+                const bits = [];
+                for (let i = 31; i >= 0; i--) {
+                    const bit = (ipInt >>> i) & 1;
+                    const isNetwork = i >= (32 - prefix);
+                    bits.push({ bit, isNetwork, index: i });
+                }
+                const octets = [];
+                for (let o = 0; o < 4; o++) {
+                    const start = o * 8;
+                    octets.push(bits.slice(start, start + 8));
+                }
+                return octets;
+            }
+
+            function isValidIp(ip) {
+                const parts = ip.split('.');
+                if (parts.length !== 4) return false;
+                return parts.every(p => {
+                    const num = Number(p);
+                    return !isNaN(num) && num >= 0 && num <= 255 && p === String(num);
+                });
+            }
+
+            function showToast(msg) {
+                toastMessage.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toastTimeout);
+                toastTimeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2000);
+            }
+
+            function copyToClipboard(text) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showToast('Copied: ' + text);
+                    }).catch(() => {
+                        fallbackCopy(text);
+                    });
+                } else {
+                    fallbackCopy(text);
+                }
+            }
+
+            function fallbackCopy(text) {
+                const area = document.createElement('textarea');
+                area.value = text;
+                document.body.appendChild(area);
+                area.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('Copied: ' + text);
+                } catch (_) {
+                    showToast('Could not copy');
+                }
+                document.body.removeChild(area);
+            }
+
+            // ----- Core Calculation -----
+
+            function calculateSubnet(ip, prefix) {
+                if (!isValidIp(ip)) {
+                    throw new Error('Invalid IP address');
+                }
+                if (!Number.isInteger(prefix) || prefix < 0 || prefix > 32) {
+                    throw new Error('CIDR prefix must be 0–32');
+                }
+
+                const ipInt = ipToInt(ip);
+                if (ipInt === null) throw new Error('Invalid IP address');
+
+                const maskInt = prefix === 0 ? 0 : (~0 >>> (32 - prefix));
+                const networkInt = (ipInt & maskInt) >>> 0;
+                const broadcastInt = (networkInt | (~maskInt >>> 0)) >>> 0;
+
+                const totalHosts = Math.pow(2, 32 - prefix);
+                let usableHosts;
+                let firstUsable, lastUsable;
+
+                if (prefix === 32) {
+                    usableHosts = 0;
+                    firstUsable = null;
+                    lastUsable = null;
+                } else if (prefix === 31) {
+                    usableHosts = 2;
+                    firstUsable = networkInt;
+                    lastUsable = broadcastInt;
+                } else {
+                    usableHosts = totalHosts - 2;
+                    firstUsable = (networkInt + 1) >>> 0;
+                    lastUsable = (broadcastInt - 1) >>> 0;
+                }
+
+                return {
+                    ip,
+                    prefix,
+                    ipInt,
+                    maskInt,
+                    networkInt,
+                    broadcastInt,
+                    firstUsable,
+                    lastUsable,
+                    totalHosts,
+                    usableHosts,
+                    mask: intToIp(maskInt),
+                    network: intToIp(networkInt),
+                    broadcast: intToIp(broadcastInt),
+                    firstUsableStr: firstUsable !== null ? intToIp(firstUsable) : '—',
+                    lastUsableStr: lastUsable !== null ? intToIp(lastUsable) : '—',
+                    ipBinary: formatBinary(ipInt, maskInt),
+                    maskBinary: formatBinary(maskInt, maskInt),
+                    networkBinary: formatBinary(networkInt, maskInt),
+                    broadcastBinary: formatBinary(broadcastInt, maskInt),
+                    firstUsableBinary: firstUsable !== null ? formatBinary(firstUsable, maskInt) : '—',
+                    lastUsableBinary: lastUsable !== null ? formatBinary(lastUsable, maskInt) : '—',
+                    ipBits: buildBinaryWithHighlight(ipInt, prefix),
+                    maskBits: buildBinaryWithHighlight(maskInt, prefix),
+                    networkBits: buildBinaryWithHighlight(networkInt, prefix),
+                    broadcastBits: buildBinaryWithHighlight(broadcastInt, prefix),
+                };
+            }
+
+            // ----- Build detail rows (shared between render & export) -----
+
+            function getDetailRows(result) {
+                return [
+                    { label: 'IP Address', decimal: result.ip, binary: result.ipBinary, copy: result.ip },
+                    { label: 'CIDR Prefix', decimal: '/' + result.prefix, binary: '—', copy: '/' + result.prefix },
+                    { label: 'Subnet Mask', decimal: result.mask, binary: result.maskBinary, copy: result.mask },
+                    { label: 'Network Address', decimal: result.network, binary: result.networkBinary,
+                    copy: result.network },
+                    { label: 'Broadcast Address', decimal: result.broadcast, binary: result.broadcastBinary,
+                        copy: result.broadcast },
+                    { label: 'First Usable', decimal: result.firstUsableStr, binary: result.firstUsableBinary,
+                        copy: result.firstUsableStr },
+                    { label: 'Last Usable', decimal: result.lastUsableStr, binary: result.lastUsableBinary,
+                        copy: result.lastUsableStr },
+                    { label: 'Total IPs', decimal: result.totalHosts.toLocaleString(), binary: '—',
+                        copy: String(result.totalHosts) },
+                    { label: 'Usable Hosts', decimal: result.usableHosts.toLocaleString(), binary: '—',
+                        copy: String(result.usableHosts) }
+                ];
+            }
+
+            // ----- Export CSV -----
+
+            function exportCSV() {
+                if (!lastResult) {
+                    showToast('No data to export');
+                    return;
+                }
+
+                const rows = getDetailRows(lastResult);
+                // Build CSV content
+                let csv = '\uFEFF'; // BOM for Excel UTF-8
+                csv += 'Property,Dotted Decimal,Binary\n';
+                rows.forEach(row => {
+                    // Wrap fields in quotes to handle commas
+                    const prop = `"${row.label}"`;
+                    const dec = `"${row.decimal}"`;
+                    const bin = `"${row.binary}"`;
+                    csv += `${prop},${dec},${bin}\n`;
+                });
+
+                // Create and download
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'subnet-data.csv');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showToast('CSV exported!');
+            }
+
+            // ----- Render Results -----
+
+            function renderResults(result) {
+                lastResult = result;
+
+                // ---- Summary ----
+                const items = [
+                    { label: 'Network Address', value: result.network, icon: 'fa-sitemap', highlight: true },
+                    { label: 'Broadcast Address', value: result.broadcast, icon: 'fa-broadcast-tower', highlight: true },
+                    { label: 'Subnet Mask', value: result.mask, icon: 'fa-mask', highlight: true },
+                    { label: 'Usable Range', value: result.firstUsableStr + ' – ' + result.lastUsableStr,
+                    icon: 'fa-arrows-left-right', highlight: false },
+                    { label: 'Total IPs', value: result.totalHosts.toLocaleString(), icon: 'fa-hashtag',
+                    highlight: false },
+                    { label: 'Usable Hosts', value: result.usableHosts.toLocaleString(), icon: 'fa-server',
+                    highlight: false }
+                ];
+
+                summaryGrid.innerHTML = items.map(item => `
+                        <div class="summary-item">
+                            <div class="label"><i class="fas ${item.icon}" style="margin-right:0.3rem;color:var(--teal-dark);"></i> ${item.label}</div>
+                            <div class="value ${item.highlight ? 'highlight' : ''}">${item.value}</div>
+                        </div>
+                    `).join('');
+
+                // ---- Detail Table ----
+                const rows = getDetailRows(result);
+                detailBody.innerHTML = rows.map(row => `
+                        <tr>
+                            <td class="label-cell">${row.label}</td>
+                            <td class="value-cell"><span class="ip-val">${row.decimal}</span></td>
+                            <td class="value-cell" style="font-size:0.75rem;color:var(--text-secondary);">${row.binary}</td>
+                            <td>
+                                ${row.copy !== '—' ? `<button class="copy-btn" data-copy="${row.copy}" title="Copy"><i class="fas fa-copy"></i></button>` : ''}
+                            </td>
+                        </tr>
+                    `).join('');
+
+                document.querySelectorAll('.copy-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const text = this.dataset.copy;
+                        if (text) copyToClipboard(text);
+                    });
+                });
+
+                // ---- Binary Visualization (text + bit breakdown) ----
+                const prefix = result.prefix;
+                const networkBits = prefix;
+                const hostBits = 32 - prefix;
+
+                const binaryRows = [
+                    { label: 'IP', bits: result.ipBits },
+                    { label: 'Mask', bits: result.maskBits },
+                    { label: 'Network', bits: result.networkBits },
+                    { label: 'Broadcast', bits: result.broadcastBits }
+                ];
+
+                binarySection.innerHTML = binaryRows.map(row => {
+                    const octetsHtml = row.bits.map(octet => {
+                        const bitsHtml = octet.map(b => {
+                            const cls = b.isNetwork ? 'bit-network' : 'bit-host';
+                            return `<span class="${cls}">${b.bit}</span>`;
+                        }).join('');
+                        return `<span class="octet-group">${bitsHtml}</span>`;
+                    }).join('');
+
+                    const breakdownHtml = `
+                            <span class="bit-breakdown">
+                                <span class="net-bits">${networkBits}</span>
+                                <span class="sep">+</span>
+                                <span class="host-bits">${hostBits}</span>
+                                <span class="sep">=</span>
+                                <span class="total-bits">32</span>
+                            </span>
+                        `;
+
+                    return `
+                            <div class="binary-row">
+                                <span class="label">${row.label}</span>
+                                <span class="bits-text">${octetsHtml}</span>
+                                ${breakdownHtml}
+                            </div>
+                        `;
+                }).join('');
+
+                // ---- Show results ----
+                resultsEl.classList.add('visible');
+            }
+
+            // ----- Main Calculate -----
+
+            function performCalculate() {
+                ipError.classList.remove('visible');
+                cidrError.classList.remove('visible');
+                ipInput.classList.remove('error');
+                cidrInput.classList.remove('error');
+
+                const ip = ipInput.value.trim();
+                const prefix = parseInt(cidrInput.value, 10);
+
+                if (!isValidIp(ip)) {
+                    ipError.classList.add('visible');
+                    ipInput.classList.add('error');
+                    return;
+                }
+                if (isNaN(prefix) || prefix < 0 || prefix > 32) {
+                    cidrError.classList.add('visible');
+                    cidrInput.classList.add('error');
+                    return;
+                }
+
+                try {
+                    const result = calculateSubnet(ip, prefix);
+                    renderResults(result);
+                } catch (err) {
+                    ipError.textContent = err.message || 'Calculation error';
+                    ipError.classList.add('visible');
+                    ipInput.classList.add('error');
+                }
+            }
+
+            // ----- Event Listeners -----
+
+            calcBtn.addEventListener('click', performCalculate);
+            ipInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performCalculate(); });
+            cidrInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') performCalculate(); });
+
+            // Export CSV
+            exportCsvBtn.addEventListener('click', exportCSV);
+
+            function syncCidr(value) {
+                const v = Math.min(32, Math.max(0, parseInt(value, 10) || 0));
+                cidrSlider.value = v;
+                cidrInput.value = v;
+                cidrDisplay.textContent = '/' + v;
+            }
+
+            cidrSlider.addEventListener('input', function() { syncCidr(this.value); });
+            cidrInput.addEventListener('input', function() {
+                let v = parseInt(this.value, 10);
+                if (isNaN(v)) v = 0;
+                v = Math.min(32, Math.max(0, v));
+                syncCidr(v);
+            });
+            cidrInput.addEventListener('blur', function() {
+                let v = parseInt(this.value, 10);
+                if (isNaN(v)) v = 24;
+                v = Math.min(32, Math.max(0, v));
+                syncCidr(v);
+            });
+
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const ip = this.dataset.ip;
+                    const prefix = parseInt(this.dataset.prefix, 10);
+                    ipInput.value = ip;
+                    syncCidr(prefix);
+                    performCalculate();
+                });
+            });
+
+            function loadFromHash() {
+                const hash = window.location.hash;
+                if (hash && hash.startsWith('#ip=')) {
+                    try {
+                        const params = new URLSearchParams(hash.slice(1));
+                        const ip = params.get('ip');
+                        const prefix = params.get('prefix');
+                        if (ip && prefix !== null) {
+                            const p = parseInt(prefix, 10);
+                            if (isValidIp(ip) && !isNaN(p) && p >= 0 && p <= 32) {
+                                ipInput.value = ip;
+                                syncCidr(p);
+                                performCalculate();
+                                return true;
+                            }
+                        }
+                    } catch (_) {}
+                }
+                return false;
+            }
+
+            if (!loadFromHash()) {
+                performCalculate();
+            }
+
+            window._subnet = { calculateSubnet, ipToInt, intToIp };
+            console.log('✅ Network Admin Toolkit — Subnet Calculator loaded (with CSV export).');
+
+        })();
+    </script>
+
+</body>
+</html>
