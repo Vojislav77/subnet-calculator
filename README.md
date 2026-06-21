@@ -2,7 +2,7 @@
 
 A professional, interactive IPv4 subnet calculator built with vanilla JavaScript, HTML, and CSS.
 
-https://screenshot.png
+<img width="1096" height="1688" alt="sc" src="https://github.com/user-attachments/assets/eee0c08b-c9c3-4cc0-8ce6-2a12f93ad362" />
 
 
 **Live Demo**
